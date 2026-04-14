@@ -1,4 +1,4 @@
-<p align="center"> <img alt="Macrocosm" src="https://github.com/syndicate-ss14/macrocosm/blob/master/Resources/Textures/_MACRO/Logo/logo.png" /></p></div>
+
 
 Macrocosm is a shared development repository for Space Station 14, a remake of SS13 that runs on [Robust Toolbox](https://github.com/space-wizards/RobustToolbox), a homegrown engine written in C#.
 
