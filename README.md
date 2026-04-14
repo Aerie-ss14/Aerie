@@ -12,7 +12,6 @@ The primary purpose of Macrocosm is to collate content from member communities (
 
 Microcosms
 
-[The Den](https://github.com/TheDenSS14) | [Funkystation](https://github.com/funky-station) | [Impstation](https://github.com/impstation)
 
 </div>
 
