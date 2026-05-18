@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd /opt/aerie/current
+
+if [[ -x ./Robust.Server ]]; then
+    exec ./Robust.Server --config-file /etc/aerie/server_config.toml
+fi
+
+if [[ -f ./Robust.Server.dll ]]; then
+    exec dotnet ./Robust.Server.dll --config-file /etc/aerie/server_config.toml
+fi
+
+echo "No Robust.Server executable or Robust.Server.dll found in /opt/aerie/current" >&2
+exit 127

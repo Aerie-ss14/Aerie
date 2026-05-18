@@ -1,0 +1,12 @@
+[game]
+hostname = "Aerie"
+desc = "Aerie Space Station 14"
+soft_max_players = 30
+
+[net]
+port = 1212
+bindto = "0.0.0.0"
+
+[database]
+engine = "sqlite"
+sqlite_dbpath = "/var/lib/aerie/preferences.db"

@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+artifact="${1:-}"
+revision="${2:-unknown}"
+
+base_dir="/opt/aerie"
+incoming_dir="$base_dir/incoming"
+releases_dir="$base_dir/releases"
+current_link="$base_dir/current"
+service_name="aerie.service"
+
+if [[ -z "$artifact" ]]; then
+    echo "usage: aerie-deploy /opt/aerie/incoming/SS14.Server_linux-x64.zip [revision]" >&2
+    exit 64
+fi
+
+artifact="$(realpath "$artifact")"
+case "$artifact" in
+    "$incoming_dir"/*.zip) ;;
+    *)
+        echo "artifact must be a zip inside $incoming_dir" >&2
+        exit 64
+        ;;
+esac
+
+if [[ ! -f "$artifact" ]]; then
+    echo "artifact does not exist: $artifact" >&2
+    exit 66
+fi
+
+install -d -o aerie-deploy -g aerie-deploy -m 0755 "$base_dir" "$incoming_dir" "$releases_dir"
+install -d -o aerie -g aerie -m 0750 /var/lib/aerie
+
+lock_file="$base_dir/deploy.lock"
+exec 9>"$lock_file"
+flock 9
+
+safe_revision="${revision//[^A-Za-z0-9._-]/_}"
+release_name="$(date -u +%Y%m%d%H%M%S)-${safe_revision:0:12}"
+release_dir="$releases_dir/$release_name"
+previous_target=""
+
+if [[ -L "$current_link" ]]; then
+    previous_target="$(readlink -f "$current_link" || true)"
+fi
+
+cleanup_failed_release() {
+    rm -rf "$release_dir"
+}
+trap cleanup_failed_release ERR
+
+mkdir "$release_dir"
+unzip -q "$artifact" -d "$release_dir"
+printf '%s\n' "$revision" > "$release_dir/REVISION"
+
+if [[ -f "$release_dir/Robust.Server" ]]; then
+    chmod 0755 "$release_dir/Robust.Server"
+fi
+
+chown -R aerie:aerie "$release_dir"
+ln -sfn "$release_dir" "$current_link"
+
+if ! systemctl restart "$service_name"; then
+    if [[ -n "$previous_target" && -d "$previous_target" ]]; then
+        ln -sfn "$previous_target" "$current_link"
+        systemctl restart "$service_name" || true
+    fi
+    exit 1
+fi
+
+systemctl --no-pager --lines=20 status "$service_name"
+
+find "$releases_dir" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' |
+    sort -rn |
+    awk 'NR > 5 {print $2}' |
+    xargs -r rm -rf
+
+rm -f "$artifact"
+trap - ERR
